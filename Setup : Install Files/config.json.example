@@ -1,0 +1,14 @@
+
+    {
+      "account_sid": "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "auth_token": "your_auth_token_here",
+      "from_number": "+11231231234",
+      "to_number": "+11231231234",
+      "alert_cooldown_minutes": 60,
+      "suppress_minutes_after_failed_retry": 120,
+      "retry_backoff_minutes": 15,
+      "plex": {
+        "process_name": "Plex Media Server",
+        "http_health_url": "http://127.0.0.1:32400/identity"
+      }
+    }
