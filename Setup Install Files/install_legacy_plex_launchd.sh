@@ -11,7 +11,7 @@ echo "Installing Legacy Plex Watch to: $TARGET_DIR"
 mkdir -p "$TARGET_DIR"
 
 # Copy python script from the parent folder of SCRIPT_DIR
-cp -f "$SCRIPT_DIR/../plex_watch.py" "$TARGET_DIR/plex_watch.py"
+cp -f "$SCRIPT_DIR/../plex_watch.py" "$TARGET_DIR/plex_watch.py" 2>/dev/null || true
 chmod +x "$TARGET_DIR/plex_watch.py"
 
 if [[ ! -f "$TARGET_DIR/config.json" ]]; then
