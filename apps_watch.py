@@ -137,6 +137,7 @@ def main():
         enable_auto_restart = app_config.get("auto_restart", False)
         enable_text_notify = app_config.get("text_notify", False)
 
+        # Initialize default state for newly added apps
         if app_name not in state:
             state[app_name] = {
                 "last_alert_ts": 0,
@@ -147,10 +148,13 @@ def main():
 
         app_state = state[app_name]
 
+        # 1. Check if the process is running by its name
         is_running = is_process_running(process_name)
         
-        # If no URL is provided, we just rely on process check
+        # 2. Check the HTTP endpoint if defined (handles 200-399 and 400-499 as up, ignores 500+)
         is_http_ok = is_http_endpoint_ok(health_url) if health_url else True
+        
+        # 3. Both must be true for the app to be considered healthy
         is_healthy = is_running and is_http_ok
 
         def send_alert(message_body, apply_cooldown=True):
@@ -165,15 +169,19 @@ def main():
                 return True
             return False
 
+        # --- Case A: The application is healthy ---
         if is_healthy:
             if app_state.get("was_down"):
+                # App has recovered, send a recovery notification
                 send_alert(f"[{get_iso_timestamp()}] OK: {app_name} is back UP.")
+            
+            # Reset down state and suppression window
             app_state["was_down"] = False
             app_state["suppress_until_ts"] = 0
             log_message(app_name, "Healthy.")
             continue
 
-        # Not healthy
+        # --- Case B: The application is DOWN ---
         app_state["was_down"] = True
         overall_exit_code = 1
 

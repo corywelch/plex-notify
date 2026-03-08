@@ -5,16 +5,16 @@ A lightweight macOS utility that monitors your Plex Media Server and other appli
 ---
 
 ## Features
-- **Health monitoring**: Checks both process and HTTP API.
-- **SMS alerts**: Instant text if an application is down.
-- **Auto-restart**: Attempts one restart when an application goes down.
-- **Multi-App Support**: Monitor Plex, SABnzbd, Prowlarr, Radarr, Sonarr, and more simultaneously.
-- **Cool-downs**:
-  - `alert_cooldown_minutes`: Minimum time between repeated "DOWN" alerts.
-  - `retry_backoff_minutes`: Minimum time between restart attempts.
-  - `suppress_minutes_after_failed_retry`: Silence window after a failed restart (prevents spam).
-- **Recovery notice**: One-time SMS when an application comes back up.
-- **Timezone**: Configurable (default UTC, can be set to ET with `zoneinfo`).
+- **Health monitoring**: Checks both the system process and the HTTP API (if configured). For web endpoints, it smartly treats both `2xx` success codes and `4xx` client errors (like 401 Unauthorized) as healthy, since hitting a 4xx error means the app server is up and responding; only true `5xx` server crashes or timeouts are flagged as down.
+- **SMS alerts**: Instant text via Twilio if an application goes down.
+- **Auto-restart**: Attempts an automated open command to restart applications when they are detected as down.
+- **Multi-App Support**: Monitor Plex, SABnzbd, Prowlarr, Radarr, Sonarr, Lidoarr, and others simultaneously.
+- **Cool-downs & Throttling**:
+  - `alert_cooldown_minutes`: Minimum time between repeated "DOWN" alerts being sent to Twilio.
+  - `retry_backoff_minutes`: Minimum time between auto-restart attempts.
+  - `suppress_minutes_after_failed_retry`: Silence window after a failed restart (prevents spam and runaway loops).
+- **Recovery notice**: One-time SMS alert sent when an application comes back online after being down.
+- **Timezone Support**: Configurable timestamp outputs (default UTC, can be set to local time easily).
 
 ---
 
@@ -23,7 +23,6 @@ A lightweight macOS utility that monitors your Plex Media Server and other appli
 plex-notify/
 ├── apps_watch.py               # Multi-app monitoring script
 ├── plex_watch.py               # Legacy Plex-only monitoring script
-├── config_migration_guide.txt  # Guide for updating old config formats
 ├── Setup Install Files/
 │   ├── config.json.example     # Sample config (copy to config.json and fill in)
 │   ├── install_launchd.sh      # Installer script for macOS launchd job (apps_watch)
@@ -31,7 +30,8 @@ plex-notify/
 │   ├── uninstall_apps_watch.sh # Uninstall script for apps_watch
 │   ├── uninstall_plex_watch.sh # Uninstall script for plex_watch
 │   ├── com.USER.appswatch.plist.template
-│   └── com.USER.plexwatch.plist.template
+│   ├── com.USER.plexwatch.plist.template
+│   └── config_migration_guide.txt  # Guide for updating old config formats
 ```
 
 *Note: Runtime state files like `state.json` are auto-created by the scripts. Do not edit them.*
@@ -86,7 +86,23 @@ Run the script once manually:
 /usr/bin/env python3 ~/plex-notify/apps_watch.py
 ```
 - If applications are healthy: Log shows `Healthy.`  
-- If an application is down: You will receive an SMS alert, an auto-restart attempt is made, followed by a success or failure notice.  
+- If an application is down: You will receive an SMS alert, an auto-restart attempt is made, followed by a success or failure notice based on the config settings. 
+
+---
+
+## How `launchd` Works (Background Service)
+macOS uses a background service manager called `launchd`. The installation script creates a Property List (`.plist`) file containing the instructions on what script to run, and how often to run it (default is every 300 seconds, or 5 minutes).
+
+Because the `.plist` instructs `launchd` to invoke `apps_watch.py` on a timer, **the script does not run a continuous `while True:` loop.** Instead, it is executed, completes its checks, saves its state to `state.json`, and exits. Five minutes later, `launchd` starts it again.
+
+### Applying Configuration or Code Changes
+If you modify `config.json` or update `apps_watch.py` directly, the changes will take effect automatically on the very next 5-minute interval! There is generally no need to restart anything.
+
+However, if you edit `com.USER.appswatch.plist.template` or the interval settings, you must reload `launchctl` to apply the background task changes:
+```bash
+launchctl unload ~/Library/LaunchAgents/com.$(id -un).appswatch.plist
+launchctl load -w ~/Library/LaunchAgents/com.$(id -un).appswatch.plist
+```
 
 ---
 
