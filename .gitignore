@@ -2,6 +2,7 @@
 # Ignore sensitive Twilio config
 config.json
 state.json
+state_plex.json
 
 # macOS noise
 .DS_Store
