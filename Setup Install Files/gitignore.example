@@ -1,0 +1,13 @@
+# Ignore sensitive Twilio config
+config.json
+state.json
+
+# macOS noise
+.DS_Store
+
+# Logs
+*.log
+
+# Python cache
+__pycache__/
+*.pyc

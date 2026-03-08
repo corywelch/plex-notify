@@ -1,0 +1,54 @@
+Config Migration Guide
+
+The configuration structure has been updated to support multiple applications seamlessly. Existing users must migrate their `config.json` to the new format.
+
+Old Format:
+```json
+{
+  "account_sid": "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "auth_token": "your_auth_token_here",
+  "from_number": "+11231231234",
+  "to_number": "+11231231234",
+  "alert_cooldown_minutes": 60,
+  "suppress_minutes_after_failed_retry": 120,
+  "retry_backoff_minutes": 15,
+  "plex": {
+    "process_name": "Plex Media Server",
+    "http_health_url": "http://127.0.0.1:32400/identity"
+  }
+}
+```
+
+New Format:
+```json
+{
+  "twilio": {
+    "account_sid": "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "auth_token": "your_auth_token_here",
+    "from_number": "+11231231234",
+    "to_number": "+11231231234"
+  },
+  "global_settings": {
+    "alert_cooldown_minutes": 60,
+    "suppress_minutes_after_failed_retry": 120,
+    "retry_backoff_minutes": 15
+  },
+  "applications": {
+    "plex": {
+      "enabled": true,
+      "process_name": "Plex Media Server",
+      "http_health_url": "http://127.0.0.1:32400/identity",
+      "auto_restart": true,
+      "text_notify": true
+    }
+  }
+}
+```
+
+Migration Steps:
+1. Create a `twilio` object and move `account_sid`, `auth_token`, `from_number`, and `to_number` inside it.
+2. Create a `global_settings` object and move `alert_cooldown_minutes`, `suppress_minutes_after_failed_retry`, and `retry_backoff_minutes` inside it.
+3. Replace the `plex` object with an `applications` object.
+4. Move your existing `plex` object inside `applications`.
+5. Add the keys `"enabled": true`, `"auto_restart": true`, and `"text_notify": true` to the `plex` configuration block.
+6. Check `config.json.example` for reference on adding additional applications like SABnzbd, Radarr, etc.
