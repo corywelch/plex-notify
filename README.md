@@ -60,6 +60,7 @@ plex-notify/
    Fill in the `twilio` block, adjust `global_settings`, and enable desired `applications`.
 
 3. **Install launchd job**  
+   *Note: Do NOT run this with `sudo`. It must be installed as your local user.*
    ```bash
    chmod +x install_launchd.sh
    ./install_launchd.sh
