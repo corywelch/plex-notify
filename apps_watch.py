@@ -17,6 +17,7 @@ import subprocess
 import base64
 import urllib.request
 import urllib.parse
+import urllib.error
 import datetime
 import pathlib
 
@@ -62,8 +63,12 @@ def is_process_running(process_name):
 
 def is_http_endpoint_ok(url):
     try:
-        with urllib.request.urlopen(url, timeout=3) as response:
-            return 200 <= response.status < 300
+        req = urllib.request.Request(url, headers={"User-Agent": "plex-notify/1.0"})
+        with urllib.request.urlopen(req, timeout=5) as response:
+            return 200 <= response.status < 400
+    except urllib.error.HTTPError as e:
+        # A 4xx response (like 401 Unauthorized) means the application server is up and rejecting us correctly.
+        return 400 <= e.code < 500
     except Exception:
         return False
 
